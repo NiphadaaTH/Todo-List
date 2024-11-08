@@ -11,6 +11,8 @@ interface todos {
 const Todo = () => {
   const [todos, setTodos] = useState<todos[]>([]);
   const [todoName, setTodoName] = useState<string>("");
+  const [editText, setEditText] = useState<string>("");
+  const [editId, setEditId] = useState<number | null>(null);
 
   const addTodos = () => {
     const newTodo = {
@@ -18,15 +20,15 @@ const Todo = () => {
       title: todoName,
       complete: false,
     };
-    setTodos([...todos, newTodo]);
-    setTodoName("");
-    localStorage.setItem("todos", JSON.stringify([...todos, newTodo]));
+    setTodos([...todos, newTodo]); //เพิ่มรายการใหม่
+    setTodoName(""); //รีเซ็ต state เพื่อเคลียร์ช่อง input
+    localStorage.setItem("todos", JSON.stringify([...todos, newTodo])); //บันทึกลงlocalS เก็บข้อมูลระหว่างเซสชัน
   };
 
   const deleteTodo = (id: number) => {
     const newTodos = todos.filter((todo) => todo.id != id);
     setTodos(newTodos);
-    localStorage.setItem("todos", JSON.stringify(newTodos));
+    localStorage.setItem("todos", JSON.stringify(newTodos)); //update
   };
 
   const checkTodo = (id: number) => {
@@ -37,6 +39,24 @@ const Todo = () => {
       return t;
     });
     setTodos(newTodos);
+    localStorage.setItem("todos", JSON.stringify(newTodos));
+  };
+
+  const startEditTodo = (id: number, currentTitle: string) => {
+    setEditId(id);
+    setEditText(currentTitle);
+  };
+
+  const saveEditTodo = (id: number) => {
+    const newTodos = todos.map((t) => {
+      if (t.id === id) {
+        t.title = editText;
+      }
+      return t;
+    });
+    setTodos(newTodos);
+    setEditId(null);
+    setEditText("");
     localStorage.setItem("todos", JSON.stringify(newTodos));
   };
 
@@ -60,27 +80,52 @@ const Todo = () => {
         {todos.map((todo) => {
           return (
             <div
+              key={todo.id}
               className="flex justify-between items-center w-1/3 my-2
             bg-indigo-700 p-4 bg-opacity-30 border border-solid border-indigo-800 rounded"
             >
-              <div className="flex flex-row space-x-2">
+              {editId === todo.id ? (
                 <input
-                  type="checkbox"
-                  checked={todo.complete}
-                  onChange={() => {
-                    checkTodo(todo.id);
-                  }}
-                  className="h-6 w-6"
+                  type="text"
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="p-2 border rounded"
                 />
-                <div
-                  className={`text-xl font-semibold ml-2 ${
-                    todo.complete ? "line-through" : ""
-                  }`}
-                >
-                  {todo.title}
+              ) : (
+                <div className="flex flex-row space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={todo.complete}
+                    onChange={() => {
+                      checkTodo(todo.id);
+                    }}
+                    className="h-6 w-6"
+                  />
+                  <div
+                    className={`text-xl font-semibold ml-2 ${
+                      todo.complete ? "line-through" : ""
+                    }`}
+                  >
+                    {todo.title}
+                  </div>
                 </div>
-              </div>
+              )}
 
+              {editId === todo.id ? (
+                <button
+                  onClick={() => saveEditTodo(todo.id)}
+                  className="bg-green-600 p-2 rounded hover:bg-green-800 text-white font-bold"
+                >
+                  Save
+                </button>
+              ) : (
+                <button
+                  onClick={() => startEditTodo(todo.id, todo.title)}
+                  className="ml-60 bg-pink-600 p-2 rounded hover:bg-pink-800 text-white font-bold"
+                >
+                  Edit
+                </button>
+              )}
               <button
                 onClick={() => {
                   deleteTodo(todo.id);
